@@ -4,21 +4,22 @@ from data.dataset_base.dataset_utils import upload_embeddings_to_hf
 from data.dataset_base.embed_data import embed_images, embed_text
 from datasets import get_dataset_class, list_datasets
 from omegaconf import DictConfig
+
 HF_TOKEN = None
-def get_data_embedding(ds_name:str, config: DictConfig):
+def get_data_embedding(ds_name:str, task_config: DictConfig):
     
-    repo_id = config.ds_name.hf_repo_id
+    repo_id = task_config.hf_repo_id
     create_repo(repo_id=repo_id, exist_ok=True, token=HF_TOKEN)
 
     embeddings_saving_path = "temp_embeddings.pkl"
 
     api = HfApi(token=HF_TOKEN)
-    batch_size: int = config.dataset.batch_size
-    image_encoder_name: str = config.dataset.img_encoder
-    text_encoder_name: str = config.dataset.text_encoder
-    image_model_variant: str = config.dataset.image_model_variant
-    text_model_variant: str = config.dataset.text_model_variant
-    metatask: str = config.dataset.metatask 
+    batch_size: int = task_config.batch_size
+    image_encoder_name: str = task_config.img_encoder
+    text_encoder_name: str = task_config.text_encoder
+    image_model_variant: str = task_config.image_model_variant
+    text_model_variant: str = task_config.text_model_variant
+    metatask: str = task_config.metatask 
 
     try:
         DatasetClass = get_dataset_class(f"{ds_name}-{metatask}-embedding")
@@ -34,7 +35,7 @@ def get_data_embedding(ds_name:str, config: DictConfig):
     # Instantiate dataset
     # We use try-except to catch missing argument errors and inform user
     try:
-        dataset = DatasetClass(config)
+        dataset = DatasetClass(task_config)
     except TypeError as e:
         print(f"Error initializing {ds_name}: {e}")
         print("Please check the script and provide necessary paths in 'dataset_args'.")
@@ -44,7 +45,7 @@ def get_data_embedding(ds_name:str, config: DictConfig):
     if hasattr(dataset, 'image_paths'):
         print(f"Embedding images for {ds_name}...")
         image_embedding = embed_images(
-            image_paths=dataset.image_paths, 
+            image_paths=dataset.get_image_paths(), 
             image_encoder=eval(image_encoder_name), 
             batch_size=batch_size, 
             model_variant=image_model_variant
@@ -62,7 +63,7 @@ def get_data_embedding(ds_name:str, config: DictConfig):
     if hasattr(dataset, 'labels_descriptions'):
         print(f"Embedding labels/descriptions for {ds_name}...")
         text_embedding = embed_text(
-            text=dataset.labels_descriptions, 
+            text=dataset.get_labels_descriptions(), 
             text_encoder=eval(text_encoder_name), 
             batch_size=batch_size, 
             model_variant=text_model_variant
@@ -78,7 +79,7 @@ def get_data_embedding(ds_name:str, config: DictConfig):
     elif hasattr(dataset, 'captions'):
         print(f"Embedding captions for {ds_name}...")
         text_embedding = embed_text(
-            text=dataset.captions, 
+            text=dataset.get_captions(), 
             text_encoder=eval(text_encoder_name), 
             batch_size=batch_size, 
             model_variant=text_model_variant
