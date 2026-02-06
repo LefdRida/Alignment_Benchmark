@@ -1,8 +1,8 @@
 from models.models import *
 from huggingface_hub import HfApi, create_repo, upload_file
-from data.dataset_base.dataset_utils import upload_embeddings_to_hf
-from data.dataset_base.embed_data import embed_images, embed_text
-from datasets import get_dataset_class, list_datasets
+from dataset_utils import upload_embeddings_to_hf
+from embed_data import embed_images, embed_text
+from data import get_dataset_class, list_datasets
 from omegaconf import DictConfig
 
 HF_TOKEN = None
